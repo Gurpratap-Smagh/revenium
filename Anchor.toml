@@ -1,5 +1,5 @@
 [programs.devnet]
-skill_stake = "REPLACE_WITH_PROGRAM_ID"
+skill_stake = "C3e8kFFYMsEKxXwjMXix3vKSLfk9WwS1xcHeg5gedjvV"
 
 [provider]
 cluster = "devnet"
@@ -7,3 +7,6 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "anchor test"
+
+[toolchain]
+anchor_version = "0.30.1"

@@ -1,8 +1,8 @@
 import { PublicKey } from '@solana/web3.js'
 import idl from '../idl/skill_stake.json'
 
-const DEFAULT_PROGRAM_ADDRESS = '11111111111111111111111111111111'
-const DEFAULT_MINT_ADDRESS = '11111111111111111111111111111111'
+const DEFAULT_PROGRAM_ADDRESS = 'C3e8kFFYMsEKxXwjMXix3vKSLfk9WwS1xcHeg5gedjvV'
+const DEFAULT_MINT_ADDRESS = 'BbdpHzXyQmNerced3qTs6trkRB3CbpkG6B1VbXYhs7BR'
 
 const warnedMessages = new Set<string>()
 

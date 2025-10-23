@@ -4,6 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import {
   AuthorityType,
   setAuthority,
+  TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 
 const PROGRAM_ID_ENV = process.env.PROGRAM_ID;
@@ -38,7 +39,10 @@ async function main() {
     mint,
     payerWallet.publicKey,
     AuthorityType.MintTokens,
-    mintAuthPda
+    mintAuthPda,
+    [],
+    undefined,
+    TOKEN_2022_PROGRAM_ID
   );
 
   console.log("Authority updated. Tx signature:", signature);

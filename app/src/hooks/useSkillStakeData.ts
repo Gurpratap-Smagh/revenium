@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getAssociatedTokenAddressSync } from '@solana/spl-token'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token'
 import { PublicKey } from '@solana/web3.js'
 import { useSetRecoilState } from 'recoil'
 import {
@@ -40,6 +40,7 @@ export const useSkillStakeData = () => {
   const setOracleNonce = useSetRecoilState(oracleNonceState)
   const setFaucetClaimed = useSetRecoilState(faucetClaimedState)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const warnedMissingAtaRef = useRef(false)
 
   const decimals = getTokenDecimals()
   const mint = getMintPublicKey()
@@ -75,7 +76,13 @@ export const useSkillStakeData = () => {
       }
 
       if (publicKey) {
-        const associatedTokenAddress = getAssociatedTokenAddressSync(mint, publicKey)
+        const associatedTokenAddress = getAssociatedTokenAddressSync(
+          mint,
+          publicKey,
+          false,
+          TOKEN_2022_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+        )
         const tokenBalance = await connection.getTokenAccountBalance(associatedTokenAddress).catch(() => null)
         const uiBalance = tokenBalance?.value?.uiAmountString
         setTokenBalance(uiBalance ? Number(uiBalance) : 0)
@@ -88,12 +95,13 @@ export const useSkillStakeData = () => {
           setPendingRewards(fromBaseUnits(pending, decimals))
           setFaucetClaimed(fromBaseUnits(BigInt(stakeAccount.faucetClaimed.toString()), decimals))
 
-          if (!uiBalance && staked > 0n) {
+          if (!uiBalance && staked > 0n && !warnedMissingAtaRef.current) {
             pushToast({
               title: 'Missing associated token account',
               description: 'Create the associated token account to access your rewards.',
               variant: 'info',
             })
+            warnedMissingAtaRef.current = true
           }
         } else {
           setPendingRewards(0)
@@ -114,28 +122,14 @@ export const useSkillStakeData = () => {
     } finally {
       setIsRefreshing(false)
     }
-  }, [
-    program,
-    publicKey,
-    connection,
-    mint,
-    decimals,
-    pushToast,
-    setTokenBalance,
-    setTotalStaked,
-    setPendingRewards,
-    setAprBps,
-    setFaucetCap,
-    setPowDifficulty,
-    setPowReward,
-    setOracleAuthority,
-    setOracleNonce,
-    setFaucetClaimed,
-  ])
+  }, [program, publicKey, connection, mint, decimals, pushToast])
 
+  // Run once per key (endpoint + programId + wallet address) to avoid effect
+  // thrash when unrelated identities change.
   useEffect(() => {
     void refresh()
-  }, [refresh])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection.rpcEndpoint, program?.programId.toBase58(), publicKey?.toBase58()])
 
   return { refresh, isRefreshing }
 }
