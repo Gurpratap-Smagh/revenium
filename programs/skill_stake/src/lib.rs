@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::keccak;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::token_interface::{self as token, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked};
 
-declare_id!("C3e8kFFYMsEKxXwjMXix3vKSLfk9WwS1xcHeg5gedjvV");
+declare_id!("CpxZiQinN5NVPcFQGfAo6LKqHLWFoegSuR9dFyVaPYMu");
 
 pub const STATE_SEED: &[u8] = b"state";
 pub const VAULT_SEED: &[u8] = b"vault";
@@ -125,13 +125,18 @@ pub mod skill_stake {
             accrue_rewards(stake_account, state.apr_bps, clock.unix_timestamp)?;
         }
 
-        let cpi_accounts = Transfer {
+        let cpi_accounts = TransferChecked {
             from: ctx.accounts.user_token.to_account_info(),
             to: ctx.accounts.vault.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::transfer(CpiContext::new(cpi_program, cpi_accounts), amount)?;
+        token::transfer_checked(
+            CpiContext::new(cpi_program, cpi_accounts),
+            amount,
+            ctx.accounts.mint.decimals,
+        )?;
 
         stake_account.amount_staked = stake_account
             .amount_staked
@@ -146,12 +151,11 @@ pub mod skill_stake {
 
         Ok(())
     }
-
     pub fn unstake(ctx: Context<Unstake>, amount: u64) -> Result<()> {
         require!(amount > 0, SkillStakeError::InvalidAmount);
         let clock = Clock::get()?;
 
-        // Take an AccountInfo handle before taking &mut state (avoids E0502)
+        // Take AccountInfo before &mut
         let state_ai = ctx.accounts.state.to_account_info();
         let state = &mut ctx.accounts.state;
         let stake_account = &mut ctx.accounts.stake_account;
@@ -162,18 +166,24 @@ pub mod skill_stake {
 
         accrue_rewards(stake_account, state.apr_bps, clock.unix_timestamp)?;
 
-        let seeds = &[STATE_SEED, &[state.bump]];
-        let signer_seeds = &[&seeds[..]];
+        // signer seeds (NO temporaries)
+        let state_bump_seed = [state.bump];
+        let state_signer: &[&[u8]] = &[STATE_SEED, &state_bump_seed];
+        let signer_seeds: &[&[&[u8]]] = &[state_signer];
 
-        let cpi_accounts = Transfer {
+        // define cpi_accounts + cpi_program BEFORE use
+        let cpi_accounts = TransferChecked {
             from: ctx.accounts.vault.to_account_info(),
-            to: ctx.accounts.user_token.to_account_info(),
+            to:   ctx.accounts.user_token.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
             authority: state_ai.clone(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::transfer(
+
+        token::transfer_checked(
             CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds),
             amount,
+            ctx.accounts.mint.decimals,
         )?;
 
         stake_account.amount_staked = stake_account
@@ -189,7 +199,6 @@ pub mod skill_stake {
 
         Ok(())
     }
-
     pub fn claim(ctx: Context<Claim>) -> Result<()> {
         let clock = Clock::get()?;
 
@@ -204,19 +213,23 @@ pub mod skill_stake {
         let rewards = stake_account.pending_rewards;
         require!(rewards > 0, SkillStakeError::NothingToClaim);
 
-        let mint_seeds = &[MINT_AUTH_SEED, &[state.mint_auth_bump]];
-        let signer = &[&mint_seeds[..]];
+        // signer seeds (NO temporaries)
+        let mint_auth_bump_seed = [state.mint_auth_bump];
+        let mint_auth_signer: &[&[u8]] = &[MINT_AUTH_SEED, &mint_auth_bump_seed];
+        let signer: &[&[&[u8]]] = &[mint_auth_signer];
 
         let cpi_accounts = MintTo {
             mint: ctx.accounts.mint.to_account_info(),
-            to: ctx.accounts.user_token.to_account_info(),
+            to:   ctx.accounts.user_token.to_account_info(),
             authority: ctx.accounts.mint_auth.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::mint_to(CpiContext::new_with_signer(cpi_program, cpi_accounts, signer), rewards)?;
+        token::mint_to(
+            CpiContext::new_with_signer(cpi_program, cpi_accounts, signer),
+            rewards,
+        )?;
 
         stake_account.pending_rewards = 0;
-
         Ok(())
     }
 
@@ -240,19 +253,25 @@ pub mod skill_stake {
             .ok_or(SkillStakeError::MathOverflow)?;
         require!(new_total <= state.faucet_cap, SkillStakeError::FaucetCapExceeded);
 
-        let signer = &[&[MINT_AUTH_SEED, &[state.mint_auth_bump]][..]];
+        // signer seeds (NO temporaries)
+        let mint_auth_bump_seed = [state.mint_auth_bump];
+        let mint_auth_signer: &[&[u8]] = &[MINT_AUTH_SEED, &mint_auth_bump_seed];
+        let signer: &[&[&[u8]]] = &[mint_auth_signer];
+
         let cpi_accounts = MintTo {
             mint: ctx.accounts.mint.to_account_info(),
-            to: ctx.accounts.user_token.to_account_info(),
+            to:   ctx.accounts.user_token.to_account_info(),
             authority: ctx.accounts.mint_auth.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
-        token::mint_to(CpiContext::new_with_signer(cpi_program, cpi_accounts, signer), amount)?;
+        token::mint_to(
+            CpiContext::new_with_signer(cpi_program, cpi_accounts, signer),
+            amount,
+        )?;
 
         stake_account.faucet_claimed = new_total;
         Ok(())
     }
-
     pub fn record_proof(ctx: Context<RecordProof>, task_id: u64, nonce: u64) -> Result<()> {
         let clock = Clock::get()?;
 
@@ -297,7 +316,7 @@ pub struct Initialize<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     #[account(
         init,
         payer = admin,
@@ -320,8 +339,8 @@ pub struct Initialize<'info> {
         token::mint = mint,
         token::authority = state
     )]
-    pub vault: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -339,15 +358,15 @@ pub struct Stake<'info> {
         token::mint = mint,
         token::authority = state
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         token::mint = mint,
         token::authority = user
     )]
-    pub user_token: Account<'info, TokenAccount>,
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
     #[account(
         init_if_needed,
         payer = user,
@@ -356,7 +375,7 @@ pub struct Stake<'info> {
         bump
     )]
     pub stake_account: Account<'info, StakeAccount>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -374,22 +393,22 @@ pub struct Unstake<'info> {
         token::mint = mint,
         token::authority = state
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         token::mint = mint,
         token::authority = user
     )]
-    pub user_token: Account<'info, TokenAccount>,
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [STAKE_ACCOUNT_SEED, user.key().as_ref()],
         bump = stake_account.bump
     )]
     pub stake_account: Account<'info, StakeAccount>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -399,7 +418,7 @@ pub struct Claim<'info> {
     #[account(seeds = [STATE_SEED], bump = state.bump)]
     pub state: Account<'info, GlobalState>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     /// CHECK: mint authority PDA
     #[account(
         seeds = [MINT_AUTH_SEED],
@@ -411,14 +430,14 @@ pub struct Claim<'info> {
         token::mint = mint,
         token::authority = user
     )]
-    pub user_token: Account<'info, TokenAccount>,
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [STAKE_ACCOUNT_SEED, user.key().as_ref()],
         bump = stake_account.bump
     )]
     pub stake_account: Account<'info, StakeAccount>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -428,12 +447,12 @@ pub struct Faucet<'info> {
     #[account(seeds = [STATE_SEED], bump = state.bump)]
     pub state: Account<'info, GlobalState>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
     /// CHECK: PDA that is mint authority
     #[account(seeds = [MINT_AUTH_SEED], bump = state.mint_auth_bump)]
     pub mint_auth: UncheckedAccount<'info>,
     #[account(mut, token::mint = mint, token::authority = user)]
-    pub user_token: Account<'info, TokenAccount>,
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
     #[account(
         init_if_needed,
         payer = user,
@@ -442,7 +461,7 @@ pub struct Faucet<'info> {
         bump
     )]
     pub stake_account: Account<'info, StakeAccount>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }

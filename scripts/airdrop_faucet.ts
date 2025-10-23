@@ -5,6 +5,8 @@ import {
   getMint,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
+  TOKEN_2022_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   PublicKey,
@@ -30,16 +32,24 @@ async function ensureAta(
   owner: PublicKey,
   mint: PublicKey
 ) {
-  const ata = getAssociatedTokenAddressSync(mint, owner, false);
+  const ata = getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    false,
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
   try {
-    await getAccount(provider.connection, ata);
+    await getAccount(provider.connection, ata, TOKEN_2022_PROGRAM_ID);
     return ata;
   } catch {
     const ix = createAssociatedTokenAccountIdempotentInstruction(
       provider.wallet.publicKey,
       ata,
       owner,
-      mint
+      mint,
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
     );
     const tx = new Transaction().add(ix);
     tx.feePayer = provider.wallet.publicKey;
@@ -89,7 +99,7 @@ async function main() {
     programId
   );
 
-  const mintInfo = await getMint(provider.connection, rewardMint);
+  const mintInfo = await getMint(provider.connection, rewardMint, TOKEN_2022_PROGRAM_ID);
   const amountRaw = parseAmount(RAW_AMOUNT_ENV, mintInfo.decimals);
 
   const userTokenAccount = await ensureAta(provider, targetWallet, rewardMint);
@@ -110,7 +120,7 @@ async function main() {
       mintAuth: mintAuthPda,
       userToken: userTokenAccount,
       user: targetWallet,
-      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     })
     .rpc();
 

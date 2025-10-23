@@ -4,6 +4,7 @@
   "instructions": [
     {
       "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
       "accounts": [
         {
           "name": "admin",
@@ -71,6 +72,7 @@
     },
     {
       "name": "setApr",
+      "discriminator": [201, 55, 244, 248, 137, 60, 19, 3],
       "accounts": [
         {
           "name": "admin",
@@ -92,6 +94,7 @@
     },
     {
       "name": "updateFaucetCap",
+      "discriminator": [141, 143, 33, 201, 43, 230, 144, 210],
       "accounts": [
         {
           "name": "admin",
@@ -113,6 +116,7 @@
     },
     {
       "name": "setOracleAuthority",
+      "discriminator": [143, 88, 226, 85, 186, 246, 185, 68],
       "accounts": [
         {
           "name": "admin",
@@ -134,6 +138,7 @@
     },
     {
       "name": "setPowConfig",
+      "discriminator": [88, 117, 6, 106, 125, 191, 239, 137],
       "accounts": [
         {
           "name": "authority",
@@ -163,6 +168,7 @@
     },
     {
       "name": "stake",
+      "discriminator": [206, 176, 202, 18, 200, 209, 179, 108],
       "accounts": [
         {
           "name": "user",
@@ -219,6 +225,7 @@
     },
     {
       "name": "unstake",
+      "discriminator": [90, 95, 107, 42, 205, 124, 50, 225],
       "accounts": [
         {
           "name": "user",
@@ -265,6 +272,7 @@
     },
     {
       "name": "claim",
+      "discriminator": [62, 198, 214, 193, 213, 159, 108, 210],
       "accounts": [
         {
           "name": "user",
@@ -306,6 +314,7 @@
     },
     {
       "name": "faucet",
+      "discriminator": [0, 98, 59, 30, 144, 142, 113, 12],
       "accounts": [
         {
           "name": "user",
@@ -362,6 +371,7 @@
     },
     {
       "name": "recordProof",
+      "discriminator": [97, 200, 36, 210, 77, 62, 158, 120],
       "accounts": [
         {
           "name": "user",
@@ -394,6 +404,7 @@
   "accounts": [
     {
       "name": "globalState",
+      "discriminator": [163, 46, 74, 168, 216, 123, 133, 98],
       "type": {
         "kind": "struct",
         "fields": [
@@ -463,6 +474,7 @@
     },
     {
       "name": "stakeAccount",
+      "discriminator": [80, 158, 67, 124, 50, 189, 192, 255],
       "type": {
         "kind": "struct",
         "fields": [
@@ -595,6 +607,7 @@
     }
   ],
   "metadata": {
-    "address": "SkillStake1111111111111111111111111111111111"
+    "address": "C3e8kFFYMsEKxXwjMXix3vKSLfk9WwS1xcHeg5gedjvV",
+    "mint": "BbdpHzXyQmNerced3qTs6trkRB3CbpkG6B1VbXYhs7BR"
   }
 }

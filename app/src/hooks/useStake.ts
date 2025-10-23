@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token'
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, LAMPORTS_PER_SOL, SendTransactionError } from '@solana/web3.js'
 import { useRecoilState } from 'recoil'
 import { stakeAmountState } from '../state/atoms'
 import { useSkillStakeProgram, BN } from './useSkillStakeProgram'
@@ -80,10 +80,34 @@ export const useStake = (options: { onComplete?: () => Promise<void> | void } = 
 
       setIsStaking(true)
       try {
+        // Ensure the wallet has enough SOL to create the stake account/ATA and pay fees.
+        const minLamports = 0.02 * LAMPORTS_PER_SOL // ~0.02 SOL buffer
+        const balance = await connection.getBalance(publicKey)
+        if (balance < minLamports) {
+          // Attempt airdrop on devnet endpoints; otherwise inform the user.
+          const endpoint = (connection as any)._rpcEndpoint ?? ''
+          const isDev = typeof endpoint === 'string' && endpoint.includes('devnet')
+          if (isDev) {
+            try {
+              await connection.requestAirdrop(publicKey, Math.ceil(0.1 * LAMPORTS_PER_SOL))
+              // Small wait for airdrop to finalize; not blocking on confirmation to keep snappy.
+              await new Promise((r) => setTimeout(r, 1200))
+            } catch {
+              // fallthrough to user message
+            }
+          }
+        }
+
         const [statePda] = PublicKey.findProgramAddressSync([STATE_SEED], program.programId)
         const [vaultPda] = PublicKey.findProgramAddressSync([VAULT_SEED], program.programId)
         const [stakePda] = PublicKey.findProgramAddressSync([STAKE_SEED, publicKey.toBuffer()], program.programId)
-        const userToken = getAssociatedTokenAddressSync(mint, publicKey)
+        const userToken = getAssociatedTokenAddressSync(
+          mint,
+          publicKey,
+          false,
+          TOKEN_2022_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+        )
 
         const preInstructions = []
         const accountInfo = await connection.getAccountInfo(userToken)
@@ -94,7 +118,7 @@ export const useStake = (options: { onComplete?: () => Promise<void> | void } = 
               userToken,
               publicKey,
               mint,
-              TOKEN_PROGRAM_ID,
+              TOKEN_2022_PROGRAM_ID,
               ASSOCIATED_TOKEN_PROGRAM_ID,
             ),
           )
@@ -109,7 +133,7 @@ export const useStake = (options: { onComplete?: () => Promise<void> | void } = 
             mint,
             userToken,
             stakeAccount: stakePda,
-            tokenProgram: TOKEN_PROGRAM_ID,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
             rent: SYSVAR_RENT_PUBKEY,
           })
@@ -127,8 +151,23 @@ export const useStake = (options: { onComplete?: () => Promise<void> | void } = 
           await options.onComplete()
         }
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Transaction failed. Check your wallet for more details.'
+        let message = error instanceof Error ? error.message : 'Transaction failed.'
+        // Enhance error message with logs when available
+        try {
+          if (error instanceof SendTransactionError && typeof error.getLogs === 'function') {
+            const logs = await error.getLogs(connection)
+            if (logs && logs.length) {
+              // surface the last meaningful log line
+              const last = logs[logs.length - 1]
+              message = `${message}\n${last}`
+              // also print full logs for debugging
+              // eslint-disable-next-line no-console
+              console.error('Stake tx logs:', logs)
+            }
+          }
+        } catch {
+          // ignore
+        }
         pushToast({
           title: 'Stake failed',
           description: message,

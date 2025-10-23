@@ -1,5 +1,6 @@
 import "dotenv/config";
 import * as anchor from "@coral-xyz/anchor";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 
 const PROGRAM_ID_ENV = process.env.PROGRAM_ID;
@@ -72,7 +73,7 @@ async function main() {
       state: statePda,
       mintAuth: mintAuthPda,
       vault: vaultPda,
-      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
       rent: anchor.web3.SYSVAR_RENT_PUBKEY,
     })
