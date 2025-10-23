@@ -1,0 +1,9 @@
+[programs.devnet]
+skill_stake = "REPLACE_WITH_PROGRAM_ID"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "anchor test"

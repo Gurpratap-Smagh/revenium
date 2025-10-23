@@ -1,0 +1,36 @@
+# Rust
+/target/
+/Cargo.lock
+
+# Anchor
+/idl/
+/token/
+
+# Node.js
+/node_modules/
+/package-lock.json
+
+# Bun
+/bun.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# OS + Editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Optional: ignore compiled JS if you're using TypeScript only
+app/**/*.js
+scripts/**/*.js

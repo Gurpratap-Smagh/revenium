@@ -1,0 +1,600 @@
+{
+  "version": "0.1.0",
+  "name": "skill_stake",
+  "instructions": [
+    {
+      "name": "initialize",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "aprBps",
+          "type": "u64"
+        },
+        {
+          "name": "faucetCap",
+          "type": "u64"
+        },
+        {
+          "name": "powReward",
+          "type": "u64"
+        },
+        {
+          "name": "powDifficulty",
+          "type": "u8"
+        },
+        {
+          "name": "oracleAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "setApr",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "aprBps",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateFaucetCap",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "faucetCap",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "setOracleAuthority",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "setPowConfig",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "powDifficulty",
+          "type": "u8"
+        },
+        {
+          "name": "powReward",
+          "type": "u64"
+        },
+        {
+          "name": "oracleNonce",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stake",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unstake",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "faucet",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "recordProof",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "taskId",
+          "type": "u64"
+        },
+        {
+          "name": "nonce",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "globalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "oracleAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          },
+          {
+            "name": "aprBps",
+            "type": "u64"
+          },
+          {
+            "name": "totalStaked",
+            "type": "u64"
+          },
+          {
+            "name": "faucetCap",
+            "type": "u64"
+          },
+          {
+            "name": "powReward",
+            "type": "u64"
+          },
+          {
+            "name": "oracleNonce",
+            "type": "u64"
+          },
+          {
+            "name": "powDifficulty",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          },
+          {
+            "name": "mintAuthBump",
+            "type": "u8"
+          },
+          {
+            "name": "_padding",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stakeAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "amountStaked",
+            "type": "u64"
+          },
+          {
+            "name": "pendingRewards",
+            "type": "u64"
+          },
+          {
+            "name": "faucetClaimed",
+            "type": "u64"
+          },
+          {
+            "name": "lastAccruedTs",
+            "type": "i64"
+          },
+          {
+            "name": "lastProofTs",
+            "type": "i64"
+          },
+          {
+            "name": "lastTaskId",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_padding",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "lastProof",
+            "type": {
+              "vec": "u8"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AprTooHigh",
+      "msg": "APR too high for devnet demo settings"
+    },
+    {
+      "code": 6001,
+      "name": "MathOverflow",
+      "msg": "Operation would overflow maths"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidAmount",
+      "msg": "Provided amount must be greater than zero"
+    },
+    {
+      "code": 6003,
+      "name": "NothingToClaim",
+      "msg": "Nothing to claim yet"
+    },
+    {
+      "code": 6004,
+      "name": "InsufficientStake",
+      "msg": "Insufficient staked balance"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Caller is not authorized for this action"
+    },
+    {
+      "code": 6006,
+      "name": "BumpNotFound",
+      "msg": "Missing PDA bump in context"
+    },
+    {
+      "code": 6007,
+      "name": "MintMismatch",
+      "msg": "Provided mint does not match program state"
+    },
+    {
+      "code": 6008,
+      "name": "ProofTooLarge",
+      "msg": "Proof payload too large"
+    },
+    {
+      "code": 6009,
+      "name": "FaucetCapExceeded",
+      "msg": "Faucet cap exceeded for this wallet"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidOracleAuthority",
+      "msg": "Oracle authority must be a valid public key"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidPowDifficulty",
+      "msg": "Proof of work difficulty is invalid for this program"
+    },
+    {
+      "code": 6012,
+      "name": "StaleOracleUpdate",
+      "msg": "Oracle update nonce is stale"
+    },
+    {
+      "code": 6013,
+      "name": "ProofDifficultyNotMet",
+      "msg": "Proof does not satisfy the difficulty target"
+    },
+    {
+      "code": 6014,
+      "name": "ProofTaskReplay",
+      "msg": "Task identifier has already been used"
+    }
+  ],
+  "metadata": {
+    "address": "SkillStake1111111111111111111111111111111111"
+  }
+}
